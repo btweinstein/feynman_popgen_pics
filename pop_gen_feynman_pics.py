@@ -65,26 +65,27 @@ class population_graph():
         self.g = None
         self.first_node = None
         self.prob_dict = None
+        self.position_list = None
 
         self.get_prob_increase = get_prob_increase_neutral
         self.get_prob_same = get_prob_same_neutral
         self.get_prob_decrease = get_prob_decrease_neutral
 
-    def create_graph(self, N = 6, max_t=20):
-        Ro = N/2
+    def create_graph(self):
+        Ro = self.N/2
 
         self.g = nx.DiGraph()
-        self.first_node = population_state(N, Ro, 0)
+        self.first_node = population_state(self.N, Ro, 0)
         self.g.add_node(self.first_node)
 
         current_R_range = np.array([Ro, Ro])
 
-        position_list = {}
-        position_list[self.first_node] = get_position(self.first_node)
+        self.position_list = {}
+        self.position_list[self.first_node] = get_position(self.first_node)
 
         # Position is determined by the fraction of red you have
 
-        for current_t in range(1, max_t + 1):
+        for current_t in range(1, self.max_t + 1):
 
             previous_R_range = current_R_range.copy()
             previous_t = current_t - 1
@@ -92,14 +93,14 @@ class population_graph():
             current_R_range += np.array([-1, 1])
 
             current_R_range[current_R_range < 0] = 0
-            current_R_range[current_R_range > N] = N
+            current_R_range[current_R_range > self.N] = self.N
 
             # Add nodes
             list_to_add = range(current_R_range[0], current_R_range[1] + 1)
             for rcur in list_to_add:
-                pop_to_add = population_state(N, rcur, current_t)
+                pop_to_add = population_state(self.N, rcur, current_t)
                 self.g.add_node(pop_to_add)
-                position_list[pop_to_add] = get_position(pop_to_add)
+                self.position_list[pop_to_add] = get_position(pop_to_add)
 
             # Then add weighted edges
             # Iterate over all previous states
@@ -107,22 +108,22 @@ class population_graph():
             previous_r = range(previous_R_range[0], previous_R_range[1] + 1)
 
             for p in previous_r:
-                prev_pop = population_state(N, p, previous_t)
+                prev_pop = population_state(self.N, p, previous_t)
 
                 # Deal with up and down states
-                if p + 1 <= N:
-                    pop_increase = population_state(N, p + 1, current_t)
+                if p + 1 <= self.N:
+                    pop_increase = population_state(self.N, p + 1, current_t)
                     prob_increase = self.get_prob_increase(prev_pop)
                     #g.add_weighted_edges_from([(prev_pop, pop_increase, prob_increase)])
                     self.g.add_edge(prev_pop, pop_increase, capacity=prob_increase)
 
                 if p - 1 >= 0:
-                    pop_decrease = population_state(N, p - 1, current_t)
+                    pop_decrease = population_state(self.N, p - 1, current_t)
                     prob_decrease = self.get_prob_decrease(prev_pop)
                     #g.add_weighted_edges_from([(prev_pop, pop_decrease, prob_decrease)])
                     self.g.add_edge(prev_pop, pop_decrease, capacity=prob_decrease)
 
-                stay_same_pop = population_state(N, p, current_t)
+                stay_same_pop = population_state(self.N, p, current_t)
                 stay_same_prob = self.get_prob_same(prev_pop)
                 #g.add_weighted_edges_from([(prev_pop, stay_same_pop, stay_same_prob)])
                 self.g.add_edge(prev_pop, stay_same_pop, capacity=stay_same_prob)

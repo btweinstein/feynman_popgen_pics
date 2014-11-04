@@ -42,6 +42,8 @@ class population_state:
 def get_position(pop):
     return (pop.t, pop.r)
 
+##### Neutral ########
+
 def get_prob_increase_neutral(pop):
     frac_red = float(pop.r) / float(pop.N)
     frac_green = float(pop.g) / float(pop.N)
@@ -56,6 +58,40 @@ def get_prob_decrease_neutral(pop):
     frac_green = float(pop.g) / float(pop.N)
     frac_red = float(pop.r) / float(pop.N)
     return frac_green * frac_red
+
+###### Selection ########
+
+# Remember, red has the selective advantage!
+
+def get_prob_increase_selection(pop, w_red, w_green):
+    frac_red = float(pop.r) / float(pop.N)
+    frac_green = float(pop.g) / float(pop.N)
+
+    prob_rep_red = (w_red*frac_red)/(w_red*frac_red + w_green * frac_green)
+    prob_die_green = frac_green
+
+    return prob_rep_red * prob_die_green
+
+def get_prob_same_selection(pop, w_red, w_green):
+    frac_red = float(pop.r) / float(pop.N)
+    frac_green = float(pop.g) / float(pop.N)
+
+    prob_rep_red = (w_red*frac_red)/(w_red*frac_red + w_green * frac_green)
+    prob_die_red = frac_red
+
+    prob_green_rep = (w_green*frac_green)/(w_red*frac_red + w_green * frac_green)
+    prob_die_green = frac_green
+
+    return prob_rep_red*prob_die_red + prob_green_rep*prob_die_green
+
+def get_prob_decrease_selection(pop, w_red, w_green):
+    frac_red = float(pop.r) / float(pop.N)
+    frac_green = float(pop.g) / float(pop.N)
+
+    prob_die_red = frac_red
+    prob_green_rep = (w_green*frac_green)/(w_red*frac_red + w_green * frac_green)
+
+    return prob_green_rep*prob_die_red
 
 class population_graph():
     def __init__(self, N=6, max_t=20, Ro=3):
@@ -128,6 +164,7 @@ class population_graph():
                 #g.add_weighted_edges_from([(prev_pop, stay_same_pop, stay_same_prob)])
                 self.g.add_edge(prev_pop, stay_same_pop, capacity=stay_same_prob)
 
+
     def get_prob_dict(self):
         self.prob_dict = {}
         start_node = self.first_node
@@ -151,3 +188,15 @@ class population_graph():
                     flow_in += edge_prob * self.prob_dict[q]
 
                 self.prob_dict[n] = flow_in
+
+class population_graph_selection(population_graph):
+
+    def __init__(self, N=6, max_t=20, Ro=3, w_red = 1.1, w_green = 1.0):
+        population_graph.__init__(self, N, max_t, Ro)
+        self.w_red = w_red
+        self.w_green = w_green
+
+        # Use the selection probabilities
+        self.get_prob_increase = lambda x: get_prob_increase_selection(x, w_red, w_green)
+        self.get_prob_same = lambda x: get_prob_same_selection(x, w_red, w_green)
+        self.get_prob_decrease = lambda x: get_prob_decrease_selection(x, w_red, w_green)

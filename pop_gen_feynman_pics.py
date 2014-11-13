@@ -10,6 +10,7 @@ def prob_of_path(g, node1, node2):
     You can see that it agrees with a more simple way, at least in terms of speed.'''
     prob = 0
     allpaths = nx.all_simple_paths(g, node1, node2)
+
     for path in allpaths:
         prob_path = 1
         start_nodes = path[:-1]
@@ -147,13 +148,13 @@ class population_graph():
                 prev_pop = population_state(self.N, p, previous_t)
 
                 # Deal with up and down states
-                if p + 1 <= self.N:
+                if (p + 1 <= self.N) and (p != 0):
                     pop_increase = population_state(self.N, p + 1, current_t)
                     prob_increase = self.get_prob_increase(prev_pop)
                     #g.add_weighted_edges_from([(prev_pop, pop_increase, prob_increase)])
                     self.g.add_edge(prev_pop, pop_increase, capacity=prob_increase)
 
-                if p - 1 >= 0:
+                if (p - 1 >= 0) and (p != self.N):
                     pop_decrease = population_state(self.N, p - 1, current_t)
                     prob_decrease = self.get_prob_decrease(prev_pop)
                     #g.add_weighted_edges_from([(prev_pop, pop_decrease, prob_decrease)])
